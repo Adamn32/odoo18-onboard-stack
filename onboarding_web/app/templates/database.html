@@ -1,56 +1,112 @@
+<!--
+Author: Adam ChapChap Ng'uni
+Last Updated: 2025-08-09 21:55 CAT
+File: templates/database.html
+Purpose: DB creation page with Savanna theme, uniform field sizing, and read-only db_name.
+-->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Database Setup</title>
+  <meta charset="UTF-8" />
+  <title>Create Client Database</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    body{background:#121212;color:#f1f1f1;font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif;margin:0;padding:40px}
-    .card{max-width:640px;margin:0 auto;background:#1e1e1e;padding:24px;border-radius:12px;box-shadow:0 0 10px rgba(0,0,0,.5)}
-    .pill{display:inline-block;padding:4px 10px;border-radius:9999px;background:#0af;color:#000;font-weight:700;margin-bottom:16px}
-    label{display:block;margin:12px 0 6px}
-    input,select{width:100%;padding:10px;background:#2c2c2c;color:#fff;border:1px solid #444;border-radius:6px}
-    button{margin-top:16px;width:100%;padding:12px;background:#0af;color:#000;border:0;border-radius:6px;font-weight:700;cursor:pointer}
-    button:hover{background:#08c}
+    :root { --form-width: 720px; --field-height: 48px; --radius: 10px; --glow: rgba(0,170,255,.42); }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      background: #000; color: #0af; font-family: Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .card {
+      width: min(100%, var(--form-width));
+      background: #111; padding: 30px; border-radius: 14px;
+      box-shadow: 0 0 22px var(--glow);
+    }
+    .logo {
+      display: block; margin: 0 auto 14px; width: 120px; height: auto;
+      filter: drop-shadow(0 0 6px var(--glow));
+    }
+    h2 { text-align: center; color: #0af; margin: 6px 0 18px; }
+    .pill { display:inline-block; padding:4px 10px; border-radius:9999px; background:#0af; color:#000; font-weight:800; margin-bottom:10px; }
+    label { display:block; margin: 12px 0 6px; color:#0af; font-weight:700; }
+    input[type=text], input[type=password], input[type=tel], select {
+      width: 100%; height: var(--field-height);
+      padding: 12px 14px; background:#222; color:#fff; border:1px solid #0af; border-radius: var(--radius);
+      outline: none;
+    }
+    input[readonly] { opacity:.9; }
+    .row { display:flex; gap:12px; }
+    .row > * { flex:1; }
+    .hint { color:#9bd; margin-top:-10px; margin-bottom:14px; }
+    .checkline { margin:10px 0 6px; color:#9bd; display:flex; align-items:center; gap:8px; }
+    button {
+      width: 100%; height: calc(var(--field-height) + 2px);
+      margin-top: 8px; background:#0af; color:#000; border:0; border-radius: var(--radius); font-weight:800; cursor:pointer;
+    }
+    button:hover { background:#08c; }
   </style>
 </head>
 <body>
   <div class="card">
+    <!-- Logo -->
+    <img src="/static/savannalogo.png" alt="Savanna Solutions" class="logo" />
+
     <span class="pill">Edition: {{ edition }}</span>
     <h2>Create Client Database</h2>
 
-    <!-- Post to /create-db (handled in main.py) -->
-    <form method="post" action="/create-db">
-      <!-- Pass edition along explicitly -->
+    <!-- Posts to /create-db; backend validates again -->
+    <form method="post" action="/create-db" id="createDbForm" novalidate>
       <input type="hidden" name="edition" value="{{ edition }}">
 
-      <label>Database Name</label>
-      <input type="text" name="db_name" required>
+      <!-- db_name (read-only, prefilled from first step) -->
+      <label for="db_name">Database Name</label>
+      <input type="text" id="db_name" name="db_name" value="{{ last_db_name or '' }}" readonly />
+      <div class="hint">Chosen on the previous screen and locked here to avoid mistakes.</div>
 
-      <label>Database Password</label>
-      <input type="password" name="db_password" required>
+      <label for="db_password">Database Password</label>
+      <input type="password" id="db_password" name="db_password" required />
 
-      <label>Phone Number</label>
-      <input type="text" name="phone" required>
+      <label for="phone">Phone Number</label>
+      <input type="tel" id="phone" name="phone" placeholder="" />
 
-      <label>Language</label>
-      <select name="lang" required>
-        <option value="en_US">English</option>
-        <option value="fr_FR">French</option>
-        <option value="pt_BR">Portuguese</option>
-      </select>
+      <div class="row">
+        <div>
+          <label for="lang">Language</label>
+          <select id="lang" name="lang" required>
+            <option value="en_US" selected>English</option>
+            <option value="fr_FR">French</option>
+          </select>
+        </div>
+        <div>
+          <label for="country">Country</label>
+          <select id="country" name="country" required>
+            <option value="ZM" selected>Zambia</option>
+            <option value="ZA">South Africa</option>
+          </select>
+        </div>
+      </div>
 
-      <label>Country</label>
-      <select name="country" required>
-        <option value="ZM">Zambia</option>
-        <option value="ZA">South Africa</option>
-        <option value="KE">Kenya</option>
-      </select>
-
-      <label><input type="checkbox" name="demo"> Include Demo Data</label>
+      <label class="checkline">
+        <input type="checkbox" id="demo" name="demo" value="true" />
+        Include Demo Data
+      </label>
 
       <button type="submit">Create Database</button>
     </form>
   </div>
+
+  <script>
+    // Author: Adam ChapChap Ng'uni | Last Updated: 2025-08-09 21:55 CAT
+    // Extra guard: keep db_name immutable in the browser
+    (function(){
+      const el = document.getElementById('db_name');
+      if (el) {
+        el.addEventListener('keydown', e => e.preventDefault());
+        el.addEventListener('beforeinput', e => e.preventDefault());
+      }
+    })();
+  </script>
 </body>
 </html>
 

@@ -1,0 +1,18 @@
+# FastAPI app + server
+fastapi
+uvicorn[standard]
+
+# Templates + env
+jinja2
+python-dotenv
+
+# Forms
+python-multipart
+
+# DB
+sqlalchemy
+psycopg2-binary
+
+# HTTP client to call Odoo API
+httpx
+

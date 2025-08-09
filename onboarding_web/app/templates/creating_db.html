@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Creating database "{{ db_name }}"</title>
+
+  <!-- No-cache headers -->
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
+  <!-- Bootstrap 5 Dark Theme -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <style>
+    body { background-color: #121212; color: #f1f1f1; }
+    .center { max-width: 680px; margin: 4rem auto; text-align: center; }
+    .muted { opacity: .75; font-size: 0.95rem; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+    .spinner {
+      width: 42px; height: 42px; border: 4px solid rgba(255,255,255,.15);
+      border-top-color: rgba(255,255,255,.6); border-radius: 50%; margin: 1rem auto;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .btn { padding: .6rem 1rem; border-radius: .5rem; }
+    .btn[disabled] { opacity: .5; cursor: not-allowed; }
+    .ok { color: #4caf50; }
+    .err { color: #f44336; }
+    .log { background:#0b1021; color:#d2e2ff; text-align:left; border-radius:.5rem; padding: .75rem 1rem; overflow:auto; max-height: 240px; }
+  </style>
+</head>
+<body>
+  <div class="center">
+    <h2>Creating database “{{ db_name }}”</h2>
+    <p class="muted">Edition: <strong>{{ edition }}</strong></p>
+    <div class="spinner" aria-hidden="true"></div>
+    <div id="msg" class="muted">Talking to Odoo…</div>
+
+    <div id="actions" style="margin-top:1.25rem;">
+      <button id="retry" class="btn btn-secondary" style="display:none;">Retry</button>
+      <a id="back" class="btn btn-outline-light" href="javascript:history.back()">Back</a>
+    </div>
+
+    <details style="margin-top:1rem;">
+      <summary class="muted">Show request details</summary>
+      <pre class="log mono" id="log"></pre>
+    </details>
+  </div>
+
+  <script>
+    // Prevent BFCache from re-running scripts on back/forward navigation
+    window.addEventListener('pageshow', (e) => {
+      if (e.persisted) {
+        history.back();
+      }
+    });
+
+    // Server-provided payload (injected by FastAPI/Jinja2)
+    const payload = {{ payload | tojson | safe }};
+    const msg = document.getElementById('msg');
+    const logEl = document.getElementById('log');
+    const retryBtn = document.getElementById('retry');
+
+    function setMsg(txt, cls='') {
+      msg.className = 'muted ' + cls;
+      msg.textContent = txt;
+    }
+
+    function writeLog(obj) {
+      try {
+        logEl.textContent = JSON.stringify(obj, null, 2);
+      } catch {
+        logEl.textContent = String(obj);
+      }
+    }
+
+    async function createOnce() {
+      retryBtn.style.display = 'none';
+      setMsg('Talking to Odoo…');
+      writeLog({ endpoint: '/api/create-db', payload: { ...payload, db_password: '***masked***' } });
+
+      try {
+        const res = await fetch('/api/create-db', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          cache: 'no-store',
+        });
+
+        const json = await res.json().catch(() => ({}));
+        writeLog({ status: res.status, body: json });
+
+        if (res.ok && json && json.ok && json.redirect) {
+          setMsg('Database ready. Redirecting…', 'ok');
+          window.location.replace(json.redirect); // One-way redirect
+          return;
+        }
+
+        if (res.status === 409) {
+          setMsg('This request expired. Please go back and submit again.', 'err');
+        } else if (json && json.error) {
+          setMsg(json.error, 'err');
+        } else {
+          setMsg('Unexpected response from server. See details below.', 'err');
+        }
+        retryBtn.style.display = 'inline-block';
+      } catch (e) {
+        setMsg('Network error: ' + e, 'err');
+        writeLog({ error: String(e) });
+        retryBtn.style.display = 'inline-block';
+      }
+    }
+
+    retryBtn.addEventListener('click', createOnce);
+
+    // Kick off immediately
+    createOnce();
+
+    // Prevent form resubmit on reload
+    if (window.history.replaceState) {
+      window.history.replaceState(null, '', window.location.href);
+    }
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Database Setup</title>
+  <style>
+    body{background:#121212;color:#f1f1f1;font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif;margin:0;padding:40px}
+    .card{max-width:640px;margin:0 auto;background:#1e1e1e;padding:24px;border-radius:12px;box-shadow:0 0 10px rgba(0,0,0,.5)}
+    .pill{display:inline-block;padding:4px 10px;border-radius:9999px;background:#0af;color:#000;font-weight:700;margin-bottom:16px}
+    label{display:block;margin:12px 0 6px}
+    input,select{width:100%;padding:10px;background:#2c2c2c;color:#fff;border:1px solid #444;border-radius:6px}
+    button{margin-top:16px;width:100%;padding:12px;background:#0af;color:#000;border:0;border-radius:6px;font-weight:700;cursor:pointer}
+    button:hover{background:#08c}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <span class="pill">Edition: {{ edition }}</span>
+    <h2>Create Client Database</h2>
+
+    <!-- Post to /create-db (handled in main.py) -->
+    <form method="post" action="/create-db">
+      <!-- Pass edition along explicitly -->
+      <input type="hidden" name="edition" value="{{ edition }}">
+
+      <label>Database Name</label>
+      <input type="text" name="db_name" required>
+
+      <label>Database Password</label>
+      <input type="password" name="db_password" required>
+
+      <label>Phone Number</label>
+      <input type="text" name="phone" required>
+
+      <label>Language</label>
+      <select name="lang" required>
+        <option value="en_US">English</option>
+        <option value="fr_FR">French</option>
+        <option value="pt_BR">Portuguese</option>
+      </select>
+
+      <label>Country</label>
+      <select name="country" required>
+        <option value="ZM">Zambia</option>
+        <option value="ZA">South Africa</option>
+        <option value="KE">Kenya</option>
+      </select>
+
+      <label><input type="checkbox" name="demo"> Include Demo Data</label>
+
+      <button type="submit">Create Database</button>
+    </form>
+  </div>
+</body>
+</html>
+

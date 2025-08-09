@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>Odoo Onboarding Form</title>
+<style>body{background:#000;color:#0af;font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}.form-container{background:#111;padding:30px;border-radius:10px;box-shadow:0 0 15px #0af;max-width:600px;width:100%}h2{text-align:center;color:#0af;margin-bottom:30px}label{display:block;margin-bottom:6px;color:#0af;font-weight:bold}input[type=text],input[type=email],select{width:100%;padding:10px;margin-bottom:20px;background:#222;color:#fff;border:1px solid #0af;border-radius:4px}button{width:100%;padding:12px;background:#0af;color:#000;border:none;font-weight:bold;font-size:16px;border-radius:4px;cursor:pointer}button:hover{background:#08c}</style>
+</head><body><div class="form-container">
+<h2>Savanna Solutions Client Onboarding</h2>
+<form method="post" action="/submit">
+<label for="company_name">Company Name:</label>
+<input type="text" id="company_name" name="company_name" required>
+<label for="admin_email">Admin Email:</label>
+<input type="email" id="admin_email" name="admin_email" required>
+<label for="odoo_edition">Select Odoo Edition:</label>
+<select id="odoo_edition" name="odoo_edition" required>
+<option value="Community Edition">Community Edition</option>
+<option value="Enterprise Edition">Enterprise Edition</option>
+</select>
+<button type="submit">Next</button>
+</form></div></body></html>

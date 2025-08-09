@@ -1,0 +1,4 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><title>Admin - Client Submissions</title>
+<style>body{background:#121212;color:#f1f1f1;font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif;margin:0;padding:20px}h1{text-align:center;color:#0af}table{width:100%;border-collapse:collapse;margin-top:30px}th,td{border:1px solid #444;padding:10px;text-align:left}th{background:#1e1e1e;color:#0af}tr:nth-child(even){background:#1a1a1a}</style>
+</head><body><h1>Client Submissions</h1><table><thead><tr><th>ID</th><th>Company Name</th><th>Email</th><th>Odoo Edition</th></tr></thead><tbody>{% for client in clients %}<tr><td>{{ client.id }}</td><td>{{ client.company_name }}</td><td>{{ client.admin_email }}</td><td>{{ client.odoo_edition }}</td></tr>{% endfor %}</tbody></table></body></html>

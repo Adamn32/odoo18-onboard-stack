@@ -1,0 +1,154 @@
+services:
+  # ---------- PostgreSQL ----------
+  pg_community:
+    image: postgres:16
+    container_name: pg_community
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD: odoo
+      POSTGRES_DB: odoo_community
+    volumes:
+      - pgdata_community:/var/lib/postgresql/data
+    networks: [odoo_net]
+
+  pg_enterprise:
+    image: postgres:16
+    container_name: pg_enterprise
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD: odoo
+      POSTGRES_DB: odoo_enterprise
+    volumes:
+      - pgdata_enterprise:/var/lib/postgresql/data
+    networks: [odoo_net]
+
+  pg_clients:
+    image: postgres:16
+    container_name: pg_clients
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: clientadmin
+      POSTGRES_PASSWORD: clientpass
+      POSTGRES_DB: clients
+    volumes:
+      - pgdata_clients:/var/lib/postgresql/data
+    networks: [odoo_net]
+
+  # ---------- Redis ----------
+  redis:
+    image: redis:alpine
+    container_name: redis
+    restart: unless-stopped
+    networks: [odoo_net]
+
+  # ---------- Odoo: Community ----------
+  odoo_community:
+    image: odoo:18.0
+    container_name: odoo_community
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on: [pg_community, redis]
+    environment:
+      HOST: pg_community
+      PORT: 5432
+      USER: odoo
+      PASSWORD: odoo
+    command: ["odoo",
+      "--db_host","pg_community",
+      "--db_port","5432",
+      "--db_user","odoo",
+      "--db_password","odoo",
+      "--log-level","info"
+    ]
+    volumes:
+      - odoo-community-data:/var/lib/odoo
+      - ./odoo/community/addons:/mnt/extra-addons
+      - ./odoo/community/odoo.conf:/etc/odoo/odoo.conf
+    ports:
+      - "8069:8069"
+    networks: [odoo_net]
+
+  # ---------- Odoo: Enterprise ----------
+  odoo_enterprise:
+    image: odoo:18.0
+    container_name: odoo_enterprise
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on: [pg_enterprise, redis]
+    environment:
+      HOST: pg_enterprise
+      PORT: 5432
+      USER: odoo
+      PASSWORD: odoo
+    command: ["odoo",
+      "--db_host","pg_enterprise",
+      "--db_port","5432",
+      "--db_user","odoo",
+      "--db_password","odoo",
+      "--log-level","info"
+    ]
+    volumes:
+      - odoo-enterprise-data:/var/lib/odoo
+      - ./odoo/enterprise/addons:/mnt/extra-addons
+      - ./odoo/enterprise/odoo.conf:/etc/odoo/odoo.conf
+    ports:
+      - "8070:8069"
+    networks: [odoo_net]
+
+  # ---------- Onboarding Web ----------
+  onboarding_web:
+    build:
+      context: ./onboarding_web/app
+    container_name: onboarding_web
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on: [pg_clients, pg_community, pg_enterprise, redis]
+    environment:
+      ODOO_COMMUNITY_URL:  http://odoo_community:8069
+      ODOO_ENTERPRISE_URL: http://odoo_enterprise:8069
+      ODOO_COMMUNITY_EXTERNAL:  http://localhost:8069
+      ODOO_ENTERPRISE_EXTERNAL: http://localhost:8070
+      DATABASE_URL: ${DATABASE_URL:-postgresql://clientadmin:clientpass@pg_clients/clients}
+      MASTER_PASSWORD: ${MASTER_PASSWORD}
+    ports:
+      - "8000:8000"
+    networks: [odoo_net]
+    volumes:
+      - ./onboarding_web/app/templates:/app/templates
+      - ./onboarding_web/app/static:/app/static
+
+  # ---------- Onboarding Worker (Celery) ----------
+  onboarding_worker:
+    build:
+      context: ./onboarding_worker
+    container_name: onboarding_worker
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on: [redis, pg_clients]
+    environment:
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL:-redis://redis:6379/0}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://clientadmin:clientpass@pg_clients/clients}
+      MASTER_PASSWORD: ${MASTER_PASSWORD}
+      ODOO_COMMUNITY_URL:  http://odoo_community:8069
+      ODOO_ENTERPRISE_URL: http://odoo_enterprise:8069
+    networks: [odoo_net]
+    command: celery -A tasks.odoo_provision worker --loglevel=info
+
+# ---------- Volumes & Network ----------
+volumes:
+  pgdata_community:
+  pgdata_enterprise:
+  pgdata_clients:
+  odoo-community-data:
+  odoo-enterprise-data:
+
+networks:
+  odoo_net:
+    driver: bridge
+

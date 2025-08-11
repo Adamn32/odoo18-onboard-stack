@@ -1,8 +1,8 @@
 <!--
 Author: Adam ChapChap Ng'uni
-Last Updated: 2025-08-09 21:55 CAT
+Last Updated: 2025-08-10 18:25 CAT
 File: templates/database.html
-Purpose: DB creation page with Savanna theme, uniform field sizing, and read-only db_name.
+Purpose: DB creation page with Savanna theme, read-only db_name, edition carried forward.
 -->
 
 <!DOCTYPE html>
@@ -40,11 +40,13 @@ Purpose: DB creation page with Savanna theme, uniform field sizing, and read-onl
     .row > * { flex:1; }
     .hint { color:#9bd; margin-top:-10px; margin-bottom:14px; }
     .checkline { margin:10px 0 6px; color:#9bd; display:flex; align-items:center; gap:8px; }
+    .error { color:#ff7a7a; font-size:.95rem; margin-top:8px; display:none; }
     button {
       width: 100%; height: calc(var(--field-height) + 2px);
       margin-top: 8px; background:#0af; color:#000; border:0; border-radius: var(--radius); font-weight:800; cursor:pointer;
     }
-    button:hover { background:#08c; }
+    button[disabled] { opacity:.6; cursor: not-allowed; }
+    button:hover:not([disabled]) { background:#08c; }
   </style>
 </head>
 <body>
@@ -55,7 +57,7 @@ Purpose: DB creation page with Savanna theme, uniform field sizing, and read-onl
     <span class="pill">Edition: {{ edition }}</span>
     <h2>Create Client Database</h2>
 
-    <!-- Posts to /create-db; backend validates again -->
+    <!-- Posts to /create-db; backend validates again and shows "creating..." page -->
     <form method="post" action="/create-db" id="createDbForm" novalidate>
       <input type="hidden" name="edition" value="{{ edition }}">
 
@@ -65,7 +67,8 @@ Purpose: DB creation page with Savanna theme, uniform field sizing, and read-onl
       <div class="hint">Chosen on the previous screen and locked here to avoid mistakes.</div>
 
       <label for="db_password">Database Password</label>
-      <input type="password" id="db_password" name="db_password" required />
+      <input type="password" id="db_password" name="db_password" required autocomplete="new-password" />
+      <div class="hint">This is the admin password for the new Odoo database.</div>
 
       <label for="phone">Phone Number</label>
       <input type="tel" id="phone" name="phone" placeholder="" />
@@ -92,21 +95,43 @@ Purpose: DB creation page with Savanna theme, uniform field sizing, and read-onl
         Include Demo Data
       </label>
 
-      <button type="submit">Create Database</button>
+      <button type="submit" id="submitBtn">Create Database</button>
+      <div class="error" id="errBox">Please provide a database password.</div>
     </form>
   </div>
 
   <script>
-    // Author: Adam ChapChap Ng'uni | Last Updated: 2025-08-09 21:55 CAT
-    // Extra guard: keep db_name immutable in the browser
-    (function(){
-      const el = document.getElementById('db_name');
-      if (el) {
-        el.addEventListener('keydown', e => e.preventDefault());
-        el.addEventListener('beforeinput', e => e.preventDefault());
+    // Author: Adam ChapChap Ng'uni | Last Updated: 2025-08-10 18:25 CAT
+    // Keep db_name immutable in the browser + basic client-side guardrails
+    (function () {
+      const dbName = document.getElementById('db_name');
+      const pwd = document.getElementById('db_password');
+      const form = document.getElementById('createDbForm');
+      const btn = document.getElementById('submitBtn');
+      const err = document.getElementById('errBox');
+
+      if (dbName) {
+        const block = e => e.preventDefault();
+        dbName.addEventListener('keydown', block);
+        dbName.addEventListener('beforeinput', block);
+        dbName.addEventListener('paste', block);
       }
+
+      // UX: focus password immediately
+      if (pwd) pwd.focus();
+
+      form.addEventListener('submit', function (e) {
+        // Minimal checks before server-side validation
+        if (!pwd.value || pwd.value.trim().length < 1) {
+          e.preventDefault();
+          err.style.display = 'block';
+          pwd.focus();
+          return;
+        }
+        // Prevent double-submits
+        btn.disabled = true;
+      });
     })();
   </script>
 </body>
 </html>
-

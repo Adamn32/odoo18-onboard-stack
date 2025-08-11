@@ -1,0 +1,9 @@
+[options]
+db_host = pg_community
+db_port = 5432
+db_user = odoo
+db_password = odoo
+admin_passwd = CHANGEME
+addons_path = /usr/lib/python3/dist-packages/odoo/addons,/mnt/extra-addons
+proxy_mode = True
+log_level = info

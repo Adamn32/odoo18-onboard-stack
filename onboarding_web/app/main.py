@@ -3,23 +3,14 @@
 FastAPI app for the Odoo onboarding gateway.
 
 Author: Adam ChapChap Ng'uni
-Last Updated: 2025-08-09 19:55 CAT
+Last Updated: 2025-08-10 18:05 CAT
 
 What changed (this revision):
-- Added db_name support end-to-end:
-  * ORM model now includes db_name
-  * /submit captures and validates db_name from form.html
-  * /database/* pre-fills db_name and renders it read-only
-  * /create-db & /api/create-db use the carried db_name
-- Added light-touch migration to ensure db_name column exists.
-
-Flow
-----
-1) "/"              -> onboarding form (company, email, edition, db_name)
-2) POST "/submit"   -> save client; route to /database/<edition>
-3) "/database/*"    -> DB details form (db_name read-only); posts to /create-db
-4) "/create-db"     -> Renders "creating..." page; that page calls /api/create-db
-5) "/api/create-db" -> Calls Odoo to create DB; returns JSON redirect URL
+- Redirect target after successful DB creation (and when DB exists) now points to:
+    Enterprise -> https://enter.savannasolutions.co.zm/web/database/manager
+    Community  -> https://comm.savannasolutions.co.zm/web/database/manager
+- Defaults for EXTERNAL Odoo URLs now use the enter/comm hostnames over HTTPS.
+- Kept idempotency, nonce guard, and existing validation intact.
 """
 
 from fastapi import FastAPI, Request, Form
@@ -45,16 +36,16 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 # Onboarding PostgreSQL (client intake DB)
-# Default matches docker-compose service names.
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://clientadmin:clientpass@pg_clients/clients")
 
 # Odoo internal URLs (container network) for API calls
 ODOO_COMMUNITY_INTERNAL  = os.getenv("ODOO_COMMUNITY_URL",  "http://odoo_community:8069")
 ODOO_ENTERPRISE_INTERNAL = os.getenv("ODOO_ENTERPRISE_URL", "http://odoo_enterprise:8069")
 
-# Public Odoo URLs (browser redirects)
-ODOO_COMMUNITY_EXTERNAL  = os.getenv("ODOO_COMMUNITY_EXTERNAL",  "http://localhost:8069")
-ODOO_ENTERPRISE_EXTERNAL = os.getenv("ODOO_ENTERPRISE_EXTERNAL", "http://localhost:8070")
+# Public Odoo URLs (browser-facing redirects)
+# NOTE: defaults now point to your public reverse-proxied domains with HTTPS
+ODOO_COMMUNITY_EXTERNAL  = os.getenv("ODOO_COMMUNITY_EXTERNAL",  "https://comm.savannasolutions.co.zm")
+ODOO_ENTERPRISE_EXTERNAL = os.getenv("ODOO_ENTERPRISE_EXTERNAL", "https://enter.savannasolutions.co.zm")
 
 # Odoo master password (read from .env; never shown to the user)
 ODOO_MASTER_PASSWORD = os.getenv("MASTER_PASSWORD", "admin")
@@ -97,8 +88,7 @@ with engine.begin() as conn:
     """))
 
 # ---------------------------------------------------------------------------
-# Simple in-memory state (acts like a session cache for the next step)
-# NOTE: This is fine for a single-instance demo. For production, use server-side sessions.
+# Simple in-memory state (session-like cache for next step)
 # ---------------------------------------------------------------------------
 _runtime_state: dict[str, str | None] = {
     "last_selected_edition": None,
@@ -148,6 +138,16 @@ async def list_databases(odoo_base: str) -> list[str]:
 def _mk_redirect(base: str, path: str) -> str:
     """Build a full URL with base + path."""
     return f"{base}{path if path.startswith('/') else '/' + path}"
+
+# Resolve edition -> external base & manager URL
+def _edition_targets(is_enterprise: bool) -> tuple[str, str]:
+    """
+    Returns (external_base, manager_url)
+    manager_url is the edition's /web/database/manager path on the public host.
+    """
+    ext_base = ODOO_ENTERPRISE_EXTERNAL if is_enterprise else ODOO_COMMUNITY_EXTERNAL
+    manager  = _mk_redirect(ext_base, "/web/database/manager")
+    return ext_base, manager
 
 # ---------------------------------------------------------------------------
 # Routes
@@ -256,7 +256,7 @@ async def create_db_page(
     selected = (edition or _runtime_state.get("last_selected_edition") or "Community").strip()
     is_enterprise = selected.lower().startswith("enter")
 
-    # Respect carried name if form didn't include it (it should).
+    # Respect carried name if form didn't include it.
     safe_name = (db_name or _runtime_state.get("last_db_name") or "").lower()
     if not safe_name or not all(c.islower() or c.isdigit() or c == "_" for c in safe_name):
         return templates.TemplateResponse(
@@ -268,11 +268,11 @@ async def create_db_page(
 
     odoo_internal = ODOO_ENTERPRISE_INTERNAL if is_enterprise else ODOO_COMMUNITY_INTERNAL
 
-    # Short-circuit: DB already exists -> send to login
+    # Short-circuit: DB already exists -> send to the edition's manager
     existing = await list_databases(odoo_internal)
     if safe_name in existing:
-        ext_base = ODOO_ENTERPRISE_EXTERNAL if is_enterprise else ODOO_COMMUNITY_EXTERNAL
-        return RedirectResponse(_mk_redirect(ext_base, f"/web/login?db={safe_name}"), status_code=302)
+        _, manager_url = _edition_targets(is_enterprise)
+        return RedirectResponse(manager_url, status_code=302)
 
     # One-time nonce for the async API call
     _clean_nonces()
@@ -335,8 +335,9 @@ async def api_create_db(request: Request):
     # Idempotency: re-check before creating
     existing = await list_databases(odoo_internal)
     if safe_name in existing:
-        ext_base = ODOO_ENTERPRISE_EXTERNAL if is_enterprise else ODOO_COMMUNITY_EXTERNAL
-        return JSONResponse({"ok": True, "redirect": _mk_redirect(ext_base, f"/web/login?db={safe_name}")})
+        # ✅ After creation (or if already present), always send to the edition's manager
+        _, manager_url = _edition_targets(is_enterprise)
+        return JSONResponse({"ok": True, "redirect": manager_url})
 
     # Odoo create DB POST payload (form-encoded)
     payload = {
@@ -360,8 +361,9 @@ async def api_create_db(request: Request):
     # Final verification after creation attempt
     existing = await list_databases(odoo_internal)
     if safe_name in existing:
-        ext_base = ODOO_ENTERPRISE_EXTERNAL if is_enterprise else ODOO_COMMUNITY_EXTERNAL
-        return JSONResponse({"ok": True, "redirect": _mk_redirect(ext_base, f"/web/login?db={safe_name}")})
+        # ✅ Success path -> edition's /web/database/manager
+        _, manager_url = _edition_targets(is_enterprise)
+        return JSONResponse({"ok": True, "redirect": manager_url})
 
     return JSONResponse({"ok": False, "error": f"Odoo error HTTP {r.status_code}"}, status_code=502)
 
@@ -384,4 +386,3 @@ async def error(request: Request):
 async def healthz():
     """Liveness probe."""
     return {"status": "ok"}
-

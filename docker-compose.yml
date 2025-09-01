@@ -1,30 +1,108 @@
+# Savanna Odoo 18 Onboarding Stack (Option B)
+# - Build context for web: ./onboarding_web/app (Dockerfile lives there)
+# - Static folder is mounted so /app/static/sslogo.png is available to templates
+# - Odoo config directories are mounted (odoo_conf/* → /etc/odoo/)
+
 services:
-  # ---------- PostgreSQL ----------
+  onboarding_web:
+    profiles: ["onboarding"]
+    build:
+      context: ./onboarding_web/app
+      dockerfile: Dockerfile
+    image: savanna/onboarding_web:latest
+    container_name: onboarding_web
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      ODOO_COMMUNITY_EXTERNAL: "http://localhost:8069"
+      ODOO_ENTERPRISE_EXTERNAL: "http://localhost:8070"
+      ODOO_COMMUNITY_URL: "http://odoo_community:8069"
+      ODOO_ENTERPRISE_URL: "http://odoo_enterprise:8069"
+      MASTER_PASSWORD: "${MASTER_PASSWORD:-M@st3r-0d00-551-2025#Zk9Ld8}"
+      DATABASE_URL: "postgresql://clientadmin:clientpass@pg_clients/clients"
+      ONBOARD_DEBUG: "${ONBOARD_DEBUG:-0}"
+    depends_on:
+      pg_clients:
+        condition: service_started
+      odoo_community:
+        condition: service_started
+      odoo_enterprise:
+        condition: service_started
+    volumes:
+      - ./onboarding_web/app:/app
+      # ⬇️ ensures /app/static/sslogo.png is served by FastAPI's StaticFiles
+      - ./onboarding_web/app/static:/app/static
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8000/healthz >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  odoo_community:
+    profiles: ["core"]
+    image: odoo:18.0
+    container_name: odoo_community
+    restart: unless-stopped
+    ports:
+      - "8069:8069"
+    volumes:
+      - odoo_community_data:/var/lib/odoo
+      - ./odoo_conf/community:/etc/odoo:ro
+    depends_on:
+      pg_community:
+        condition: service_healthy
+
+  odoo_enterprise:
+    profiles: ["core"]
+    image: odoo:18.0
+    container_name: odoo_enterprise
+    restart: unless-stopped
+    ports:
+      - "8070:8069"
+    volumes:
+      - odoo_enterprise_data:/var/lib/odoo
+      - ./odoo_conf/enterprise:/etc/odoo:ro
+    depends_on:
+      pg_enterprise:
+        condition: service_healthy
+
   pg_community:
+    profiles: ["core"]
     image: postgres:16
     container_name: pg_community
     restart: unless-stopped
     environment:
       POSTGRES_USER: odoo
       POSTGRES_PASSWORD: odoo
-      POSTGRES_DB: odoo_community
+      POSTGRES_DB: postgres
     volumes:
-      - pgdata_community:/var/lib/postgresql/data
-    networks: [odoo_net]
+      - pg_community_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U odoo -d postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
 
   pg_enterprise:
+    profiles: ["core"]
     image: postgres:16
     container_name: pg_enterprise
     restart: unless-stopped
     environment:
       POSTGRES_USER: odoo
       POSTGRES_PASSWORD: odoo
-      POSTGRES_DB: odoo_enterprise
+      POSTGRES_DB: postgres
     volumes:
-      - pgdata_enterprise:/var/lib/postgresql/data
-    networks: [odoo_net]
+      - pg_enterprise_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U odoo -d postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
 
   pg_clients:
+    profiles: ["onboarding"]
     image: postgres:16
     container_name: pg_clients
     restart: unless-stopped
@@ -33,122 +111,16 @@ services:
       POSTGRES_PASSWORD: clientpass
       POSTGRES_DB: clients
     volumes:
-      - pgdata_clients:/var/lib/postgresql/data
-    networks: [odoo_net]
+      - pg_clients_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clientadmin -d clients"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
 
-  # ---------- Redis ----------
-  redis:
-    image: redis:alpine
-    container_name: redis
-    restart: unless-stopped
-    networks: [odoo_net]
-
-  # ---------- Odoo: Community ----------
-  odoo_community:
-    image: odoo:18.0
-    container_name: odoo_community
-    restart: unless-stopped
-    env_file:
-      - .env
-    depends_on: [pg_community, redis]
-    environment:
-      HOST: pg_community
-      PORT: 5432
-      USER: odoo
-      PASSWORD: odoo
-    command: ["odoo",
-      "--db_host","pg_community",
-      "--db_port","5432",
-      "--db_user","odoo",
-      "--db_password","odoo",
-      "--log-level","info"
-    ]
-    volumes:
-      - odoo-community-data:/var/lib/odoo
-      - ./odoo/community/addons:/mnt/extra-addons
-      - ./odoo/community/odoo.conf:/etc/odoo/odoo.conf
-    ports:
-      - "8069:8069"
-    networks: [odoo_net]
-
-  # ---------- Odoo: Enterprise ----------
-  odoo_enterprise:
-    image: odoo:18.0
-    container_name: odoo_enterprise
-    restart: unless-stopped
-    env_file:
-      - .env
-    depends_on: [pg_enterprise, redis]
-    environment:
-      HOST: pg_enterprise
-      PORT: 5432
-      USER: odoo
-      PASSWORD: odoo
-    command: ["odoo",
-      "--db_host","pg_enterprise",
-      "--db_port","5432",
-      "--db_user","odoo",
-      "--db_password","odoo",
-      "--log-level","info"
-    ]
-    volumes:
-      - odoo-enterprise-data:/var/lib/odoo
-      - ./odoo/enterprise/addons:/mnt/extra-addons
-      - ./odoo/enterprise/odoo.conf:/etc/odoo/odoo.conf
-    ports:
-      - "8070:8069"
-    networks: [odoo_net]
-
-  # ---------- Onboarding Web ----------
-  onboarding_web:
-    build:
-      context: ./onboarding_web/app
-    container_name: onboarding_web
-    restart: unless-stopped
-    env_file:
-      - .env
-    depends_on: [pg_clients, pg_community, pg_enterprise, redis]
-    environment:
-      ODOO_COMMUNITY_URL:  http://odoo_community:8069
-      ODOO_ENTERPRISE_URL: http://odoo_enterprise:8069
-      ODOO_COMMUNITY_EXTERNAL:  http://localhost:8069
-      ODOO_ENTERPRISE_EXTERNAL: http://localhost:8070
-      DATABASE_URL: ${DATABASE_URL:-postgresql://clientadmin:clientpass@pg_clients/clients}
-      MASTER_PASSWORD: ${MASTER_PASSWORD}
-    ports:
-      - "8000:8000"
-    networks: [odoo_net]
-    volumes:
-      - ./onboarding_web/app/templates:/app/templates
-      - ./onboarding_web/app/static:/app/static
-
-  # ---------- Onboarding Worker (Celery) ----------
-  onboarding_worker:
-    build:
-      context: ./onboarding_worker
-    container_name: onboarding_worker
-    restart: unless-stopped
-    env_file:
-      - .env
-    depends_on: [redis, pg_clients]
-    environment:
-      CELERY_BROKER_URL: ${CELERY_BROKER_URL:-redis://redis:6379/0}
-      DATABASE_URL: ${DATABASE_URL:-postgresql://clientadmin:clientpass@pg_clients/clients}
-      MASTER_PASSWORD: ${MASTER_PASSWORD}
-      ODOO_COMMUNITY_URL:  http://odoo_community:8069
-      ODOO_ENTERPRISE_URL: http://odoo_enterprise:8069
-    networks: [odoo_net]
-    command: celery -A tasks.odoo_provision worker --loglevel=info
-
-# ---------- Volumes & Network ----------
 volumes:
-  pgdata_community:
-  pgdata_enterprise:
-  pgdata_clients:
-  odoo-community-data:
-  odoo-enterprise-data:
-
-networks:
-  odoo_net:
-    driver: bridge
-
+  odoo_community_data:
+  odoo_enterprise_data:
+  pg_community_data:
+  pg_enterprise_data:
+  pg_clients_data:

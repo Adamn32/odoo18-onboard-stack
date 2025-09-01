@@ -1,7 +1,16 @@
-venv/
 __pycache__/
-uploads/
 *.pyc
+node_modules/
+.venv/
+venv/
+.vscode/
+.idea/
 .env
-.odoo/
-*.sqlite3
+.env.*
+# Do NOT commit raw Odoo conf files that may include secrets
+odoo_conf/**/odoo.conf
+
+# Local docker volumes/data
+pg_community_data/
+pg_enterprise_data/
+pg_clients_data/

@@ -1,56 +1,120 @@
+<!-- Create Database – Savanna Night theme with logo -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Database Setup</title>
+  <meta charset="UTF-8" />
+  <title>Create Database – {{ edition }}</title>
   <style>
-    body{background:#121212;color:#f1f1f1;font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif;margin:0;padding:40px}
-    .card{max-width:640px;margin:0 auto;background:#1e1e1e;padding:24px;border-radius:12px;box-shadow:0 0 10px rgba(0,0,0,.5)}
-    .pill{display:inline-block;padding:4px 10px;border-radius:9999px;background:#0af;color:#000;font-weight:700;margin-bottom:16px}
-    label{display:block;margin:12px 0 6px}
-    input,select{width:100%;padding:10px;background:#2c2c2c;color:#fff;border:1px solid #444;border-radius:6px}
-    button{margin-top:16px;width:100%;padding:12px;background:#0af;color:#000;border:0;border-radius:6px;font-weight:700;cursor:pointer}
-    button:hover{background:#08c}
+    :root{
+      --bg:#06080f; --panel:#0b1220; --panel-2:#0e1626; --text:#e6f1ff; --muted:#9bb3d6;
+      --line:#152338; --accent:#00a8ff; --accent-2:#4cc2ff; --radius:14px;
+      --glow:0 0 24px rgba(0,168,255,.25); --shadow:0 12px 30px rgba(0,0,0,.45);
+    }
+    html,body{height:100%}
+    body{
+      margin:0; background: radial-gradient(1200px 800px at 50% -10%, rgba(0,168,255,.08), transparent 60%), var(--bg);
+      color:var(--text); font:16px/1.5 "Inter","Segoe UI",sans-serif;
+      display:flex; justify-content:center; align-items:flex-start; padding:40px 24px;
+    }
+    .card{
+      width:100%; max-width:720px; background:linear-gradient(180deg, rgba(12,20,36,.95), rgba(10,16,30,.98));
+      border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow);
+      padding:28px; position:relative; overflow:hidden;
+    }
+    .card:before{content:""; position:absolute; inset:-2px -2px auto -2px; height:4px;
+      background:linear-gradient(90deg, transparent, var(--accent), transparent); filter:blur(4px); opacity:.8;}
+    .brand-row{display:flex; align-items:center; gap:12px; margin-bottom:10px}
+    .brand-row img{height:28px; width:auto; filter: drop-shadow(0 0 10px rgba(76,194,255,.35))}
+    .pill{display:inline-block; padding:4px 10px; border-radius:9999px; background:rgba(0,168,255,.12);
+      color:var(--accent-2); font-weight:700; font-size:12px; border:1px solid rgba(0,168,255,.35)}
+    h2{margin:0 0 6px 0; font-size:24px; font-weight:800}
+    .helper{color:var(--muted); margin:0 0 16px 0; font-size:13px}
+    form{display:grid; gap:14px}
+    label{font-size:13px; color:#bcd2f0}
+    .field{display:flex; flex-direction:column; gap:8px; background:var(--panel-2);
+      border:1px solid var(--line); border-radius:12px; padding:12px 14px}
+    .field:focus-within{border-color:var(--accent); box-shadow:var(--glow)}
+    input,select{background:transparent; border:0; outline:none; color:var(--text); font-size:15px}
+    .ro{opacity:.85} .row{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+    @media (max-width:640px){.row{grid-template-columns:1fr}}
+    .checkbox{display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px dashed var(--line);
+      border-radius:12px; background:rgba(21,35,56,.35)}
+    .btn{
+      margin-top:10px; display:inline-flex; align-items:center; justify-content:center; width:100%;
+      padding:12px 16px; background:linear-gradient(180deg, var(--accent), #008bd1);
+      color:#001018; font-weight:800; font-size:15px; border:0; border-radius:12px; cursor:pointer;
+      transition:transform .05s ease-in-out, box-shadow .2s ease; box-shadow:0 8px 28px rgba(0,168,255,.28)
+    }
+    .btn:hover{filter:saturate(110%); box-shadow:0 10px 34px rgba(0,168,255,.36)}
+    .btn:active{transform:translateY(1px)}
   </style>
 </head>
 <body>
+
   <div class="card">
-    <span class="pill">Edition: {{ edition }}</span>
+    <!-- ⬇️ Brand/logo + edition pill -->
+    <div class="brand-row">
+      <img src="{{ url_for('static', path='sslogo.png') }}" alt="Savanna Solutions Logo" />
+      <span class="pill">Edition: {{ edition }}</span>
+    </div>
+
     <h2>Create Client Database</h2>
+    <div class="helper">
+      We’ll provision your Odoo instance with the options below.  
+      (Your Domain Name choice was captured in step-1.)
+    </div>
 
-    <!-- Post to /create-db (handled in main.py) -->
+    <!-- Posts to /create-db -->
     <form method="post" action="/create-db">
-      <!-- Pass edition along explicitly -->
-      <input type="hidden" name="edition" value="{{ edition }}">
+      <input type="hidden" name="edition" value="{{ edition }}" />
 
-      <label>Database Name</label>
-      <input type="text" name="db_name" required>
+      <!-- READ-ONLY DB NAME, prefilled from step-1/session -->
+      <label for="db_name">Database Name</label>
+      <div class="field">
+        <input class="ro" type="text" id="db_name" name="db_name" value="{{ last_db_name }}" readonly required />
+      </div>
 
-      <label>Database Password</label>
-      <input type="password" name="db_password" required>
+      <label for="db_password">Database Password</label>
+      <div class="field">
+        <input type="password" id="db_password" name="db_password" placeholder="Set an admin password" required />
+      </div>
 
-      <label>Phone Number</label>
-      <input type="text" name="phone" required>
+      <label for="phone">Phone Number</label>
+      <div class="field">
+        <input type="text" id="phone" name="phone" placeholder="e.g. 0966662326" />
+      </div>
 
-      <label>Language</label>
-      <select name="lang" required>
-        <option value="en_US">English</option>
-        <option value="fr_FR">French</option>
-        <option value="pt_BR">Portuguese</option>
-      </select>
+      <div class="row">
+        <div>
+          <label for="lang">Language</label>
+          <div class="field">
+            <select id="lang" name="lang" required>
+              <option value="en_US" selected>English (US)</option>
+              <option value="fr_FR">French</option>
+              <option value="pt_BR">Portuguese (Brazil)</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label for="country">Country</label>
+          <div class="field">
+            <select id="country" name="country" required>
+              <option value="ZM" selected>Zambia</option>
+              <option value="ZA">South Africa</option>
+              <option value="KE">Kenya</option>
+            </select>
+          </div>
+        </div>
+      </div>
 
-      <label>Country</label>
-      <select name="country" required>
-        <option value="ZM">Zambia</option>
-        <option value="ZA">South Africa</option>
-        <option value="KE">Kenya</option>
-      </select>
+      <div class="checkbox">
+        <input type="checkbox" id="demo" name="demo" />
+        <label for="demo" style="margin:0">Include demo data</label>
+      </div>
 
-      <label><input type="checkbox" name="demo"> Include Demo Data</label>
-
-      <button type="submit">Create Database</button>
+      <button class="btn" type="submit">Create Database</button>
     </form>
   </div>
+
 </body>
 </html>
-

@@ -11,11 +11,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=on
 
 # --- System deps ---
-# - libpq-dev + build-essential for psycopg2 build (safe even with psycopg2-binary)
-# - curl handy for debugging/health checks if you ever exec into the container
-RUN apt-get update && apt-get install -y --no-install-recommends \
-      build-essential \
-      libpq-dev \
+# psycopg2-binary ships pre-built wheels; no build-essential needed
+RUN apt-get update && apt-get install -y --fix-missing --no-install-recommends \
       curl \
     && rm -rf /var/lib/apt/lists/*
 

@@ -17,7 +17,8 @@ from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from sqlalchemy import create_engine, Column, Integer, String, Boolean, text
+from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, text
+from sqlalchemy.sql import func
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 import httpx
@@ -65,6 +66,7 @@ class ClientInfo(Base):
     db_name          = Column(String, nullable=False)   # Database name (<=63 chars)
     domain_name      = Column(Boolean, nullable=False, default=False)  # Y/N toggle (was website)
     name_domain_name = Column(String, nullable=True)                   # Optional domain string
+    created_at       = Column(DateTime(timezone=True), server_default=func.now())
 
 Base.metadata.create_all(bind=engine)
 
@@ -110,6 +112,11 @@ with engine.begin() as conn:
                 WHERE name_domain_name IS NULL AND name_website IS NOT NULL;
             END IF;
         END$$;
+    """))
+    # Ensure created_at column exists
+    conn.execute(text("""
+        ALTER TABLE clients
+        ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
     """))
 
 # ---------------------------------------------------------------------------
@@ -161,7 +168,7 @@ def _mk_redirect(base: str, path: str) -> str:
 @app.get("/")
 async def form_page(request: Request):
     """Initial company info form."""
-    return templates.TemplateResponse("form.html", {"request": request})
+    return templates.TemplateResponse(request, "form.html")
 
 @app.post("/submit")
 async def handle_submit(
@@ -184,9 +191,9 @@ async def handle_submit(
     safe_name = (db_name or "").lower().strip()
     if not safe_name or not all(c.islower() or c.isdigit() or c == "_" for c in safe_name):
         return templates.TemplateResponse(
+            request,
             "error.html",
             {
-                "request": request,
                 "message": "Invalid database name.",
                 "details": "Use lowercase letters, numbers, and underscores only."
             },
@@ -230,8 +237,9 @@ async def database_community(request: Request):
     """DB creation form for Community (db_name is read-only)."""
     _runtime_state["last_selected_edition"] = "Community"
     return templates.TemplateResponse(
+        request,
         "database.html",
-        {"request": request, "edition": "Community", "last_db_name": _runtime_state.get("last_db_name", "")},
+        {"edition": "Community", "last_db_name": _runtime_state.get("last_db_name", "")},
     )
 
 @app.get("/database/enterprise")
@@ -239,8 +247,9 @@ async def database_enterprise(request: Request):
     """DB creation form for Enterprise (db_name is read-only)."""
     _runtime_state["last_selected_edition"] = "Enterprise"
     return templates.TemplateResponse(
+        request,
         "database.html",
-        {"request": request, "edition": "Enterprise", "last_db_name": _runtime_state.get("last_db_name", "")},
+        {"edition": "Enterprise", "last_db_name": _runtime_state.get("last_db_name", "")},
     )
 
 @app.post("/create-db")
@@ -262,8 +271,9 @@ async def create_db_page(
     safe_name = (db_name or _runtime_state.get("last_db_name") or "").lower()
     if not safe_name or not all(c.islower() or c.isdigit() or c == "_" for c in safe_name):
         return templates.TemplateResponse(
+            request,
             "error.html",
-            {"request": request, "message": "Invalid database name.",
+            {"message": "Invalid database name.",
              "details": "Use lowercase letters, numbers, and underscores only."},
             status_code=400,
         )
@@ -282,9 +292,9 @@ async def create_db_page(
     _nonces[nonce] = time.time() + 300  # 5 mins
 
     resp = templates.TemplateResponse(
+        request,
         "creating_db.html",
         {
-            "request": request,
             "db_name": safe_name,
             "edition": "Enterprise" if is_enterprise else "Community",
             "is_enterprise": is_enterprise,
@@ -368,11 +378,15 @@ async def admin_clients(request: Request):
         rows = db.query(ClientInfo).all()
     finally:
         db.close()
-    return templates.TemplateResponse("admin_clients.html", {"request": request, "clients": rows})
+    return templates.TemplateResponse(request, "admin_clients.html", {"clients": rows})
+
+@app.get("/success")
+async def success(request: Request, message: str = "Your Odoo instance is ready.", redirect_url: str = ""):
+    return templates.TemplateResponse(request, "success.html", {"message": message, "redirect_url": redirect_url})
 
 @app.get("/error")
 async def error(request: Request):
-    return templates.TemplateResponse("error.html", {"request": request})
+    return templates.TemplateResponse(request, "error.html")
 
 @app.get("/healthz")
 async def healthz():

@@ -1,72 +1,63 @@
-<!-- templates/admin_clients.html -->
-<!-- Author: Adam ChapChap Ng'uni
-     Updated: 2025-09-01
-     Notes:
-       - Shows domain_name (boolean) and name_domain_name (varchar)
-       - Keeps copy-to-clipboard UX for email, db_name, and domain value
--->
-
 {% extends "base.html" %}
-{% block title %}Clients (Admin){% endblock %}
+{% block title %}Clients (Admin) – Savanna Onboarding{% endblock %}
 
 {% block content %}
-<div class="card mx-auto shadow" style="max-width: 1100px;">
-  <div class="card-body">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h3 class="mb-0">Client Intake Records</h3>
-      <a href="/" class="btn btn-sm btn-outline-primary">+ New</a>
+<div style="padding:32px 16px;display:flex;justify-content:center;width:100%">
+  <div class="card" style="max-width:1100px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <h2 style="margin:0;font-size:20px">Client Intake Records</h2>
+      <a class="btn" href="/" style="width:auto;padding:8px 16px;min-height:38px;font-size:13px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New
+      </a>
     </div>
 
     {% if clients and clients|length %}
-    <div class="table-responsive">
-      <table class="table table-dark table-striped align-middle">
+    <div style="overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius-sm)">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
         <thead>
-          <tr>
-            <th scope="col">#</th>
-            <th scope="col">Company</th>
-            <th scope="col">Admin Email</th>
-            <th scope="col">Edition</th>
-            <th scope="col">DB Name</th>
-            <th scope="col">Has Domain?</th>
-            <th scope="col">Domain Name</th>
+          <tr style="background:var(--panel-2);border-bottom:1px solid var(--line)">
+            <th style="padding:10px 12px;text-align:left;color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.06em">#</th>
+            <th style="padding:10px 12px;text-align:left;color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.06em">Company</th>
+            <th style="padding:10px 12px;text-align:left;color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.06em">Email</th>
+            <th style="padding:10px 12px;text-align:left;color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.06em">Edition</th>
+            <th style="padding:10px 12px;text-align:left;color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.06em">DB Name</th>
+            <th style="padding:10px 12px;text-align:left;color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.06em">Domain</th>
+            <th style="padding:10px 12px;text-align:left;color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.06em">Domain Name</th>
           </tr>
         </thead>
         <tbody>
           {% for c in clients %}
-          <tr>
-            <td>{{ c.id }}</td>
-
-            <td>{{ c.company_name }}</td>
-
-            <td>
-              <span class="me-2">{{ c.admin_email }}</span>
-              <!-- copy admin email -->
-              <button class="btn btn-sm btn-outline-secondary copy" data-copy="{{ c.admin_email }}">Copy</button>
+          <tr style="border-bottom:1px solid var(--line);transition:background var(--dur-fast) var(--ease-in-out)">
+            <td style="padding:10px 12px;color:var(--muted)">{{ c.id }}</td>
+            <td style="padding:10px 12px;font-weight:500">{{ c.company_name }}</td>
+            <td style="padding:10px 12px">
+              <span style="margin-right:8px;color:var(--text-2)">{{ c.admin_email }}</span>
+              <button class="copy-btn" data-copy="{{ c.admin_email }}">Copy</button>
             </td>
-
-            <td>{{ c.odoo_edition }}</td>
-
-            <td>
-              <code class="me-2">{{ c.db_name }}</code>
-              <!-- copy db name -->
-              <button class="btn btn-sm btn-outline-secondary copy" data-copy="{{ c.db_name }}">Copy</button>
+            <td style="padding:10px 12px">
+              <span class="pill" style="font-size:11px;padding:3px 8px">{{ c.odoo_edition }}</span>
             </td>
-
-            <td>
+            <td style="padding:10px 12px">
+              <code style="color:var(--accent-2);background:rgba(99,102,241,0.08);padding:2px 6px;border-radius:4px;font-size:12px">{{ c.db_name }}</code>
+              <button class="copy-btn" data-copy="{{ c.db_name }}" style="margin-left:6px">Copy</button>
+            </td>
+            <td style="padding:10px 12px">
               {% if c.domain_name %}
-                <span class="badge bg-success">Yes</span>
+              <span style="display:inline-flex;align-items:center;gap:4px;color:var(--cta);font-size:12px;font-weight:500">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                Yes
+              </span>
               {% else %}
-                <span class="badge bg-secondary">No</span>
+              <span style="color:var(--muted);font-size:12px">No</span>
               {% endif %}
             </td>
-
-            <td>
+            <td style="padding:10px 12px">
               {% if c.name_domain_name %}
-                <code class="me-2">{{ c.name_domain_name }}</code>
-                <!-- copy domain name -->
-                <button class="btn btn-sm btn-outline-secondary copy" data-copy="{{ c.name_domain_name }}">Copy</button>
+              <code style="color:var(--text-2);font-size:12px">{{ c.name_domain_name }}</code>
+              <button class="copy-btn" data-copy="{{ c.name_domain_name }}" style="margin-left:6px">Copy</button>
               {% else %}
-                <span class="text-muted">—</span>
+              <span style="color:var(--muted);font-size:12px">&mdash;</span>
               {% endif %}
             </td>
           </tr>
@@ -75,24 +66,30 @@
       </table>
     </div>
     {% else %}
-      <div class="alert alert-info mb-0">No clients captured yet.</div>
+    <div style="text-align:center;padding:40px 20px;border:1px dashed var(--line-2);border-radius:var(--radius-sm)">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--muted);margin-bottom:12px">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+      <p style="color:var(--muted);font-size:14px">No clients captured yet.</p>
+    </div>
     {% endif %}
   </div>
 </div>
 
 <script>
-/* Tiny UX helper: copy-to-clipboard for email, db_name, and domain name */
-document.querySelectorAll('button.copy').forEach(btn => {
+document.querySelectorAll('.copy-btn').forEach(btn => {
   btn.addEventListener('click', async () => {
     try {
       await navigator.clipboard.writeText(btn.dataset.copy || '');
-      const old = btn.textContent;
-      btn.textContent = 'Copied';
-      setTimeout(() => (btn.textContent = old), 1200);
+      btn.classList.add('copied');
+      btn.textContent = 'Copied!';
+      setTimeout(() => {
+        btn.classList.remove('copied');
+        btn.textContent = 'Copy';
+      }, 1400);
     } catch {
-      const old = btn.textContent;
       btn.textContent = 'Failed';
-      setTimeout(() => (btn.textContent = old), 1200);
+      setTimeout(() => { btn.textContent = 'Copy'; }, 1400);
     }
   });
 });

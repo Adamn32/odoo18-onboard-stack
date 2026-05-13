@@ -1,10 +1,88 @@
-<!--
-Author: Adam ChapChap Ng'uni
-Last Updated: 2025-08-09 17:39 CAT
-File: error.html
-Description: Updated to include db_name support and inline comments for clarity.
--->
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Error</title>
-<style>body{background:#2a0d0d;color:#ffd3d3;font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0}.card{background:#3b1515;padding:24px;border-radius:12px;box-shadow:0 0 10px rgba(0,0,0,.5)}</style></head>
-<!-- Body starts -->
-<body><div class="card"><h2>Something went wrong ❌</h2><p>Please try again or contact support.</p></div></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Error</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}" />
+  <style>
+    body { align-items: center; min-height: 100vh; }
+    .error-card {
+      width: 100%;
+      max-width: 440px;
+      background: linear-gradient(180deg, rgba(30, 10, 15, 0.95), rgba(20, 8, 12, 0.98));
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      border-radius: var(--radius);
+      box-shadow: 0 12px 40px rgba(239, 68, 68, 0.12);
+      padding: 36px 28px;
+      text-align: center;
+      animation: springUp 0.5s var(--spring-smooth) both;
+    }
+    .error-card:before {
+      content: '';
+      position: absolute;
+      inset: -2px -2px auto -2px;
+      height: 4px;
+      background: linear-gradient(90deg, transparent, var(--error), transparent);
+      filter: blur(4px);
+      opacity: 0.7;
+    }
+    .error-icon {
+      width: 56px;
+      height: 56px;
+      margin: 0 auto 16px;
+      border-radius: 50%;
+      background: rgba(239, 68, 68, 0.12);
+      border: 2px solid rgba(239, 68, 68, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: springScale 0.4s var(--spring-bounce) both;
+    }
+    .error-icon svg {
+      color: var(--error);
+    }
+    h2 {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      background: none;
+      -webkit-text-fill-color: initial;
+      color: var(--text);
+    }
+    .err-msg {
+      color: var(--text-2);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .err-details {
+      color: var(--error);
+      font-size: 13px;
+      margin-top: 8px;
+      opacity: 0.85;
+    }
+  </style>
+</head>
+<body>
+  <div class="card error-card">
+    <div class="error-icon">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="15" y1="9" x2="9" y2="15"/>
+        <line x1="9" y1="9" x2="15" y2="15"/>
+      </svg>
+    </div>
+    <h2>Something went wrong</h2>
+    <p class="err-msg">{{ message }}</p>
+    {% if details %}
+    <p class="err-details">{{ details }}</p>
+    {% endif %}
+    <div style="margin-top:20px">
+      <a class="btn btn-secondary" href="javascript:history.back()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Go back
+      </a>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,101 +1,50 @@
-<!-- Savanna Night theme with logo -->
-<!-- Notes:
-  - Logo file must exist at /app/static/sslogo.png (host: onboarding_web/app/static/sslogo.png)
-  - Order is Company -> DB -> Admin Email -> Domain Name (Y/N) -> Domain Name (value, conditional) -> Edition
-  - Field names match DB: domain_name (boolean as Y/N) and name_domain_name (varchar)
--->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Odoo Onboarding – Savanna Solutions</title>
-
-  <style>
-    :root{
-      --bg:#06080f; --panel:#0b1220; --panel-2:#0e1626; --text:#e6f1ff; --muted:#9bb3d6;
-      --line:#152338; --accent:#00a8ff; --accent-2:#4cc2ff; --glow:0 0 24px rgba(0,168,255,.25);
-      --radius:14px; --shadow:0 12px 30px rgba(0,0,0,.45);
-    }
-    html,body{height:100%}
-    body{
-      margin:0;
-      background: radial-gradient(1200px 800px at 50% -10%, rgba(0,168,255,.08), transparent 60%), var(--bg);
-      color:var(--text);
-      font:16px/1.5 "Inter","Segoe UI",sans-serif;
-      display:flex; align-items:flex-start; justify-content:center; padding:32px;
-    }
-    .card{
-      width:100%; max-width:720px;
-      background:linear-gradient(180deg, rgba(12,20,36,.95), rgba(10,16,30,.98));
-      border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow);
-      padding:28px; position:relative; overflow:hidden;
-    }
-    .card:before{content:""; position:absolute; inset:-2px -2px auto -2px; height:4px;
-      background:linear-gradient(90deg, transparent, var(--accent), transparent); filter:blur(4px); opacity:.8;}
-    .brand{display:flex; align-items:center; justify-content:center; margin-bottom:14px}
-    .brand img{height:52px; width:auto; filter: drop-shadow(0 0 10px rgba(76,194,255,.35))}
-    h2{margin:8px 0 8px 0; font-size:26px; font-weight:800; text-align:center}
-    .helper{color:var(--muted); margin:-2px 0 18px 0; font-size:13px; text-align:center}
-    form{display:grid; gap:14px}
-    label{font-size:13px; color:#bcd2f0}
-    .field{display:flex; flex-direction:column; gap:8px; background:var(--panel-2);
-      border:1px solid var(--line); border-radius:12px; padding:12px 14px}
-    .field:focus-within{border-color:var(--accent); box-shadow:var(--glow)}
-    input[type="text"], input[type="email"], select{
-      background:transparent; border:0; outline:none; color:var(--text); font-size:15px
-    }
-    .hint{font-size:12px; color:var(--muted); margin-top:2px}
-    .btn{
-      margin-top:10px; display:inline-flex; align-items:center; justify-content:center; width:100%;
-      padding:12px 16px; background:linear-gradient(180deg, var(--accent), #008bd1);
-      color:#001018; font-weight:800; font-size:15px; border:0; border-radius:12px; cursor:pointer;
-      transition:transform .05s ease-in-out, box-shadow .2s ease; box-shadow:0 8px 28px rgba(0,168,255,.28)
-    }
-    .btn:hover{filter:saturate(110%); box-shadow:0 10px 34px rgba(0,168,255,.36)}
-    .btn:active{transform:translateY(1px)}
-    .hidden{display:none}
-    @media (max-width:520px){.card{padding:20px} h2{font-size:22px}}
-  </style>
+  <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}" />
 </head>
 <body>
-
   <div class="card">
-    <!-- ⬇️ Brand/logo -->
     <div class="brand">
       <img src="{{ url_for('static', path='sslogo.png') }}" alt="Savanna Solutions Logo" />
     </div>
 
     <h2>Client Onboarding</h2>
-    <div class="helper">Fill in the details below to prepare your Odoo environment.</div>
+    <p class="helper">Fill in the details below to prepare your Odoo environment.</p>
 
-    <!-- Posts to /submit; backend reads fields and caches db_name for step-2 -->
-    <form method="post" action="/submit" id="intakeForm" novalidate>
-      <!-- 1) Company Name -->
-      <label for="company_name">Company Name</label>
-      <div class="field">
-        <input type="text" id="company_name" name="company_name" required />
+    <form method="post" action="/submit" id="intakeForm" novalidate class="stagger">
+      <div>
+        <label for="company_name">Company Name</label>
+        <div class="field">
+          <input type="text" id="company_name" name="company_name" placeholder="e.g. Savanna Solutions" required />
+        </div>
       </div>
 
-      <!-- 2) Database Name (under Company Name) -->
-      <label for="db_name">Database Name</label>
-      <div class="field">
-        <input type="text" id="db_name" name="db_name" placeholder="e.g. savanna, savanna_test" required pattern="[a-z0-9_]+" />
-      </div>
-      <div class="hint">Allowed: lowercase letters, numbers, underscores.</div>
-
-      <!-- 3) Admin Email -->
-      <label for="admin_email">Admin Email</label>
-      <div class="field">
-        <input type="email" id="admin_email" name="admin_email" required />
+      <div>
+        <label for="db_name">Database Name</label>
+        <div class="field">
+          <input type="text" id="db_name" name="db_name" placeholder="e.g. savanna, savanna_test" required pattern="[a-z0-9_]+" />
+        </div>
+        <div class="hint">Allowed: lowercase letters, numbers, underscores.</div>
       </div>
 
-      <!-- 4) Domain Name (Y/N). If 'Y' => show Domain Name text field -->
-      <label for="domain_name">Do you have a Domain Name? (Y/N)</label>
-      <div class="field">
-        <input type="text" id="domain_name" name="domain_name" placeholder="Y or N" pattern="[YyNn]" maxlength="1" value="N" required />
+      <div>
+        <label for="admin_email">Admin Email</label>
+        <div class="field">
+          <input type="email" id="admin_email" name="admin_email" placeholder="admin@company.com" required />
+        </div>
       </div>
 
-      <!-- 5) Domain Name value (conditional; shown only when domain_name == Y) -->
+      <div>
+        <label for="domain_name">Do you have a Domain Name? (Y/N)</label>
+        <div class="field">
+          <input type="text" id="domain_name" name="domain_name" placeholder="Y or N" pattern="[YyNn]" maxlength="1" value="N" required />
+        </div>
+      </div>
+
       <div id="nameDomainGroup" class="hidden">
         <label for="name_domain_name">Domain Name</label>
         <div class="field">
@@ -103,44 +52,56 @@
         </div>
       </div>
 
-      <!-- 6) Odoo Edition -->
-      <label for="odoo_edition">Select Odoo Edition</label>
-      <div class="field">
-        <select id="odoo_edition" name="odoo_edition" required>
-          <option value="Community">Community Edition</option>
-          <option value="Enterprise">Enterprise Edition</option>
-        </select>
+      <div>
+        <label for="odoo_edition">Select Odoo Edition</label>
+        <div class="field">
+          <select id="odoo_edition" name="odoo_edition" required>
+            <option value="Community">Community Edition</option>
+            <option value="Enterprise">Enterprise Edition</option>
+          </select>
+        </div>
       </div>
 
-      <button class="btn" type="submit">Next</button>
+      <button class="btn" type="submit" id="submitBtn">
+        <span class="btn-text">Next</span>
+        <span class="btn-spinner"></span>
+      </button>
     </form>
   </div>
 
   <script>
-    // Enforce db_name format: lowercase + [a-z0-9_]
     const dbInput = document.getElementById('db_name');
     dbInput.addEventListener('input', () => {
       dbInput.value = dbInput.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
     });
 
-    // Domain Name conditional field (Y -> show "Domain Name" text)
     const domainYN = document.getElementById('domain_name');
     const nameGroup = document.getElementById('nameDomainGroup');
 
     function toggleNameDomain() {
       const val = (domainYN.value || '').trim().toLowerCase();
       const isYes = val === 'y';
-      nameGroup.classList.toggle('hidden', !isYes);
-      if (!isYes) {
+
+      if (isYes) {
+        nameGroup.classList.remove('hidden');
+        nameGroup.style.animation = 'fadeSlideUp 0.3s cubic-bezier(0.23, 1, 0.32, 1) both';
+      } else {
+        nameGroup.classList.add('hidden');
         const nm = document.getElementById('name_domain_name');
         if (nm) nm.value = '';
       }
     }
 
-    // init + on change
     toggleNameDomain();
     domainYN.addEventListener('input', toggleNameDomain);
     domainYN.addEventListener('change', toggleNameDomain);
+
+    const form = document.getElementById('intakeForm');
+    const btn = document.getElementById('submitBtn');
+    form.addEventListener('submit', () => {
+      btn.classList.add('loading');
+      btn.disabled = true;
+    });
   </script>
 </body>
 </html>

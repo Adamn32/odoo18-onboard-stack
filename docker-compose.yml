@@ -25,10 +25,6 @@ services:
     depends_on:
       pg_clients:
         condition: service_started
-      odoo_community:
-        condition: service_started
-      odoo_enterprise:
-        condition: service_started
     volumes:
       - ./onboarding_web/app:/app
       # ⬇️ ensures /app/static/sslogo.png is served by FastAPI's StaticFiles

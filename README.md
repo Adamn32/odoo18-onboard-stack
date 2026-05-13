@@ -18,24 +18,39 @@ A containerized FastAPI + Odoo stack to **collect client details, provision Odoo
 
 ## Architecture
 
-```
-[ Client Browser ]
-       │ 1. fills form at /
-       ▼
-[ Onboarding Web (FastAPI) ]  ── POST /submit ──>  [ pg_clients (intake DB) ]
-       │
-       │ 2. redirects to /database/{community,enterprise}
-       │
-       ▼
-[ Onboarding Web ]  ── POST /create-db ──>  [ "Creating…" page ]
-       │
-       │ 3. JS calls POST /api/create-db  (with nonce)
-       │
-       ├─> Odoo Community ────> pg_community
-       │        POST /web/database/create
-       │
-       └─> Odoo Enterprise ───> pg_enterprise
-                POST /web/database/create
+```mermaid
+flowchart TB
+    subgraph Client["Client"]
+        B[Browser]
+    end
+
+    subgraph Onboarding["Onboarding Stack"]
+        WEB[Onboarding Web<br/>FastAPI + Jinja2]
+        CLIENTS_DB[(pg_clients<br/>intake DB)]
+        NONCE[Nonce Store<br/>in-memory 5min]
+    end
+
+    subgraph OdooInfra["Odoo Infrastructure"]
+        OC[Odoo Community<br/>:8069]
+        OE[Odoo Enterprise<br/>:8070]
+        PC[(pg_community)]
+        PE[(pg_enterprise)]
+    end
+
+    B -- "1. GET / → form" --> WEB
+    B -- "2. POST /submit" --> WEB
+    WEB -- "persist intake" --> CLIENTS_DB
+    WEB -- "redirect → /database/{edition}" --> B
+    B -- "3. POST /create-db" --> WEB
+    WEB -- "generate nonce" --> NONCE
+    WEB -- "render creating_db.html" --> B
+    B -- "4. POST /api/create-db<br/>(JSON + nonce)" --> WEB
+    WEB -- "validate nonce" --> NONCE
+    WEB -- "POST /web/database/create" --> OC
+    WEB -- "POST /web/database/create" --> OE
+    OC --> PC
+    OE --> PE
+    WEB -- "redirect → /web/login?db=..." --> B
 ```
 
 ### URL Pattern (recommended for production)

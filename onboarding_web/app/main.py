@@ -3,13 +3,7 @@
 FastAPI app for the Odoo onboarding gateway.
 
 Author: Adam ChapChap Ng'uni
-Last Updated: 01-09-2025 (Domain Name Y/N + name_domain_name; label updates)
-
-Changes in this revision:
-- Rename website -> domain_name (Y/N stored as boolean)
-- Rename name_website -> name_domain_name (varchar)
-- Update form handlers, ORM, and light migrations accordingly.
-- DB name still flows from step 1 to step 2 (read-only on create page).
+Created: 2025-08-09
 """
 
 from fastapi import FastAPI, Request, Form

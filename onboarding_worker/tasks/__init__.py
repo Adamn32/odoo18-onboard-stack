@@ -1,3 +1,5 @@
+# onboarding_worker/tasks/__init__.py
+# Author: Adam ChapChap Ng'uni — Created: 2025-08-09
 from celery import Celery
 from .odoo_provision import provision_odoo_company
 

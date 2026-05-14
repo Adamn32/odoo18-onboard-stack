@@ -1,3 +1,5 @@
+# onboarding_worker/Dockerfile
+# Author: Adam ChapChap Ng'uni — Created: 2025-08-09
 FROM python:3.11-slim
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1 PIP_NO_CACHE_DIR=1 PIP_DEFAULT_TIMEOUT=120 PIP_INDEX_URL=https://pypi.org/simple
 WORKDIR /app

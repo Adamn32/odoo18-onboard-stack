@@ -1,6 +1,6 @@
 # onboarding_web/app/Dockerfile
+# Author: Adam ChapChap Ng'uni — Created: 2025-08-09
 # FastAPI + Uvicorn container for the onboarding app
-# Build context is THIS folder (onboarding_web/app), so we COPY "." not "app/".
 
 FROM python:3.12-slim
 

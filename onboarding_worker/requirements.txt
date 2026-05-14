@@ -1,3 +1,5 @@
+# onboarding_worker/requirements.txt
+# Author: Adam ChapChap Ng'uni — Created: 2025-08-09
 celery
 redis
 psycopg2-binary

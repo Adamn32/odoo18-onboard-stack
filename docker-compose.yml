@@ -1,7 +1,5 @@
-# Savanna Odoo 18 Onboarding Stack (Option B)
-# - Build context for web: ./onboarding_web/app (Dockerfile lives there)
-# - Static folder is mounted so /app/static/sslogo.png is available to templates
-# - Odoo config directories are mounted (odoo_conf/* → /etc/odoo/)
+# Savanna Odoo 18 Onboarding Stack
+# Author: Adam ChapChap Ng'uni — Created: 2025-08-09
 
 services:
   onboarding_web:

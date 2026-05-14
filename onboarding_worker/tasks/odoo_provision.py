@@ -1,3 +1,5 @@
+# onboarding_worker/tasks/odoo_provision.py
+# Author: Adam ChapChap Ng'uni — Created: 2025-08-09
 import odoorpc
 
 def provision_odoo_company(host, port, db, user, password, company_name, modules):

@@ -19,48 +19,36 @@
     <form method="post" action="/submit" id="intakeForm" novalidate class="stagger">
       <div>
         <label for="company_name">Company Name</label>
-        <div class="field">
-          <input type="text" id="company_name" name="company_name" placeholder="e.g. Savanna Solutions" required />
-        </div>
+        <input type="text" id="company_name" name="company_name" placeholder="e.g. Savanna Solutions" class="field" required />
       </div>
 
       <div>
         <label for="db_name">Database Name</label>
-        <div class="field">
-          <input type="text" id="db_name" name="db_name" placeholder="e.g. savanna, savanna_test" required pattern="[a-z0-9_]+" />
-        </div>
+        <input type="text" id="db_name" name="db_name" placeholder="e.g. savanna, savanna_test" class="field" required pattern="[a-z0-9_]+" />
         <div class="hint">Allowed: lowercase letters, numbers, underscores.</div>
       </div>
 
       <div>
         <label for="admin_email">Admin Email</label>
-        <div class="field">
-          <input type="email" id="admin_email" name="admin_email" placeholder="admin@company.com" required />
-        </div>
+        <input type="email" id="admin_email" name="admin_email" placeholder="admin@company.com" class="field" required />
       </div>
 
       <div>
         <label for="domain_name">Do you have a Domain Name? (Y/N)</label>
-        <div class="field">
-          <input type="text" id="domain_name" name="domain_name" placeholder="Y or N" pattern="[YyNn]" maxlength="1" value="N" required />
-        </div>
+        <input type="text" id="domain_name" name="domain_name" placeholder="Y or N" class="field" pattern="[YyNn]" maxlength="1" value="N" required />
       </div>
 
       <div id="nameDomainGroup" class="hidden">
         <label for="name_domain_name">Domain Name</label>
-        <div class="field">
-          <input type="text" id="name_domain_name" name="name_domain_name" placeholder="e.g. example.com" />
-        </div>
+        <input type="text" id="name_domain_name" name="name_domain_name" placeholder="e.g. example.com" class="field" />
       </div>
 
       <div>
         <label for="odoo_edition">Select Odoo Edition</label>
-        <div class="field">
-          <select id="odoo_edition" name="odoo_edition" required>
-            <option value="Community">Community Edition</option>
-            <option value="Enterprise">Enterprise Edition</option>
-          </select>
-        </div>
+        <select id="odoo_edition" name="odoo_edition" class="field" required>
+          <option value="Community">Community Edition</option>
+          <option value="Enterprise">Enterprise Edition</option>
+        </select>
       </div>
 
       <button class="btn" type="submit" id="submitBtn">

@@ -7,8 +7,8 @@ FastAPI + Odoo 18 onboarding stack. Collects client details via a 2-step web for
 - **FastAPI** (`onboarding_web/app/main.py`) — intake forms, API, DB migrations
 - **pg_clients** — Postgres for intake records (clients table)
 - **Odoo 18** (Community & Enterprise) — each with its own Postgres
-- **Docker Compose profiles**: `core` (Odoo+Postgres), `onboarding` (web+clients DB)
-- **Background worker** (`onboarding_worker/`) — optional Celery/odoorpc tasks (not wired in compose)
+- **Docker Compose profiles**: `core` (Odoo+Postgres), `onboarding` (web+clients DB), `worker` (Redis+Celery)
+- **Background worker** (`onboarding_worker/`) — Celery/odoorpc tasks wired in via `worker` profile
 
 ## Key Files
 
@@ -71,6 +71,7 @@ class ClientInfo(Base):
 ## Docker
 - `--profile core` — Odoo Community + Enterprise + their Postgres instances
 - `--profile onboarding` — FastAPI web + pg_clients
+- `--profile worker` — Redis + Celery worker
 - Web container has hot-reload via `UVICORN_RELOAD=1`
 
 ## Common Commands
@@ -78,6 +79,7 @@ class ClientInfo(Base):
 # Start everything
 docker compose --profile core up -d
 docker compose --profile onboarding up -d --build
+docker compose --profile worker up -d --build
 
 # Logs
 docker compose logs -f onboarding_web
@@ -88,6 +90,6 @@ docker exec -it pg_clients psql -U clientadmin -d clients
 
 ## Gotchas
 - `_runtime_state` is in-memory dict — not suitable for multi-replica deployments
-- No dependency version pins in requirements.txt — pin before prod
-- worker code is NOT wired into docker-compose.yml (Redis + worker services missing)
+- All `requirements.txt` files are pinned to specific versions — update before upgrading
+- Worker hardcodes Odoo Enterprise connection (`odoo_enterprise:8069`, db="Savanna") — update `tasks/__init__.py` if provisioning targets differ
 - `odoo_conf/` directory is gitignored but required for compose mounts

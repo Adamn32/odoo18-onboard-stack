@@ -28,7 +28,7 @@ services:
       # ⬇️ ensures /app/static/sslogo.png is served by FastAPI's StaticFiles
       - ./onboarding_web/app/static:/app/static
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8000/healthz >/dev/null 2>&1 || exit 1"]
+      test: ["CMD-SHELL", "curl -sf http://127.0.0.1:8000/healthz >/dev/null 2>&1 || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -111,6 +111,33 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
+
+  redis:
+    profiles: ["worker"]
+    image: redis:7-alpine
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  onboarding_worker:
+    profiles: ["worker"]
+    build:
+      context: ./onboarding_worker
+      dockerfile: Dockerfile
+    image: savanna/onboarding_worker:latest
+    container_name: onboarding_worker
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_started
+    environment:
+      REDIS_URL: "redis://redis:6379/0"
 
 volumes:
   odoo_community_data:

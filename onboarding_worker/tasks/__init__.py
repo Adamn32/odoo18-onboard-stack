@@ -1,9 +1,10 @@
 # onboarding_worker/tasks/__init__.py
 # Author: Adam ChapChap Ng'uni — Created: 2025-08-09
+import os
 from celery import Celery
 from .odoo_provision import provision_odoo_company
 
-app = Celery("tasks", broker="redis://redis:6379/0")
+app = Celery("tasks", broker=os.getenv("REDIS_URL", "redis://redis:6379/0"))
 
 @app.task
 def create_odoo_company(data):

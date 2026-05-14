@@ -201,7 +201,7 @@
       retryBtn.style.display = 'none';
       statusSvg.style.display = 'none';
       statusIcon.className = 'status-icon loading';
-      setMsg('Talking to Odoo&hellip;');
+      setMsg('Talking to Odoo\u2026');
       writeLog({ endpoint: '/api/create-db', payload: { ...payload, db_password: '***masked***' } });
 
       try {

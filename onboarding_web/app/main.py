@@ -17,7 +17,7 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 
 import httpx
 from dotenv import load_dotenv
-import os, time, secrets
+import os, re, time, secrets
 
 # ---------------------------------------------------------------------------
 # Environment & App Setup
@@ -190,6 +190,18 @@ async def handle_submit(
             {
                 "message": "Invalid database name.",
                 "details": "Use lowercase letters, numbers, and underscores only."
+            },
+            status_code=400,
+        )
+
+    email_re = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
+    if not email_re.match((admin_email or "").strip()):
+        return templates.TemplateResponse(
+            request,
+            "error.html",
+            {
+                "message": "Invalid email address.",
+                "details": "Please enter a valid email (e.g., user@example.com)."
             },
             status_code=400,
         )

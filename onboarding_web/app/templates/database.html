@@ -33,7 +33,28 @@
 
       <div>
         <label for="db_password">Database Password</label>
-        <input type="password" id="db_password" name="db_password" placeholder="Set an admin password" class="field" required />
+        <div style="display:flex;gap:8px;align-items:stretch">
+          <div style="position:relative;flex:1">
+            <input type="password" id="db_password" name="db_password" placeholder="Set an admin password" class="field" required style="padding-right:44px" />
+            <button type="button" id="pwToggle" aria-label="Toggle password visibility" style="position:absolute;right:4px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;padding:8px;line-height:0" tabindex="-1">
+              <svg id="pwEye" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg id="pwEyeOff" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+          </div>
+          <button type="button" id="pwGenerate" class="btn btn-secondary" style="width:auto;white-space:nowrap;padding:8px 14px;min-height:auto;flex-shrink:0" title="Generate strong password">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Generate
+          </button>
+        </div>
+        <div id="pwStrength" style="margin-top:8px;display:none">
+          <div style="height:4px;background:var(--line);border-radius:4px;overflow:hidden">
+            <div id="pwBar" style="height:100%;width:0%;border-radius:4px;transition:width 0.3s ease,background 0.3s ease"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:4px">
+            <span id="pwLabel" style="font-size:11px;color:var(--muted)"></span>
+            <span id="pwCharset" style="font-size:11px;color:var(--muted)"></span>
+          </div>
+        </div>
       </div>
 
       <div>
@@ -73,11 +94,105 @@
   </div>
 
   <script>
-    const form = document.getElementById('intakeForm');
-    const btn = document.getElementById('submitBtn');
-    form.addEventListener('submit', () => {
+    document.getElementById('intakeForm').addEventListener('submit', function() {
+      const btn = document.getElementById('submitBtn');
       btn.classList.add('loading');
       btn.disabled = true;
+    });
+
+    const pwInput = document.getElementById('db_password');
+    const pwToggle = document.getElementById('pwToggle');
+    const pwEye = document.getElementById('pwEye');
+    const pwEyeOff = document.getElementById('pwEyeOff');
+    let pwVisible = false;
+    pwToggle.addEventListener('click', () => {
+      pwVisible = !pwVisible;
+      pwInput.type = pwVisible ? 'text' : 'password';
+      pwEye.style.display = pwVisible ? 'none' : 'block';
+      pwEyeOff.style.display = pwVisible ? 'block' : 'none';
+    });
+
+    const pwGenerate = document.getElementById('pwGenerate');
+    const pwStrength = document.getElementById('pwStrength');
+    const pwBar = document.getElementById('pwBar');
+    const pwLabel = document.getElementById('pwLabel');
+    const pwCharset = document.getElementById('pwCharset');
+
+    function generatePassword(length) {
+      const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      const lower = 'abcdefghijklmnopqrstuvwxyz';
+      const digits = '0123456789';
+      const symbols = '!@#$%^&*()_+-=[]{}|;:,.<>?';
+      const all = upper + lower + digits + symbols;
+      let pw = '';
+      pw += upper[Math.floor(Math.random() * upper.length)];
+      pw += lower[Math.floor(Math.random() * lower.length)];
+      pw += digits[Math.floor(Math.random() * digits.length)];
+      pw += symbols[Math.floor(Math.random() * symbols.length)];
+      for (let i = pw.length; i < length; i++) {
+        pw += all[Math.floor(Math.random() * all.length)];
+      }
+      return pw.split('').sort(() => Math.random() - 0.5).join('');
+    }
+
+    function ratePassword(pw) {
+      let score = 0;
+      if (pw.length >= 12) score += 25;
+      else if (pw.length >= 8) score += 15;
+      if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) score += 25;
+      if (/\d/.test(pw)) score += 25;
+      if (/[^a-zA-Z0-9]/.test(pw)) score += 25;
+      return Math.min(score, 100);
+    }
+
+    function charsetLabel(pw) {
+      const parts = [];
+      if (/[a-z]/.test(pw)) parts.push('a-z');
+      if (/[A-Z]/.test(pw)) parts.push('A-Z');
+      if (/\d/.test(pw)) parts.push('0-9');
+      if (/[^a-zA-Z0-9]/.test(pw)) parts.push('!@#$%');
+      return parts.join(' ');
+    }
+
+    function updateStrength(pw) {
+      const score = ratePassword(pw);
+      pwStrength.style.display = pw.length ? 'block' : 'none';
+      pwBar.style.width = score + '%';
+      if (score < 30) {
+        pwBar.style.background = 'var(--error)';
+        pwLabel.textContent = 'Weak';
+        pwLabel.style.color = 'var(--error)';
+      } else if (score < 60) {
+        pwBar.style.background = 'var(--warning)';
+        pwLabel.textContent = 'Fair';
+        pwLabel.style.color = 'var(--warning)';
+      } else if (score < 85) {
+        pwBar.style.background = 'var(--accent)';
+        pwLabel.textContent = 'Strong';
+        pwLabel.style.color = 'var(--accent)';
+      } else {
+        pwBar.style.background = 'var(--success)';
+        pwLabel.textContent = 'Very strong';
+        pwLabel.style.color = 'var(--success)';
+      }
+      pwCharset.textContent = charsetLabel(pw);
+    }
+
+    pwGenerate.addEventListener('click', () => {
+      const pw = generatePassword(20);
+      pwInput.value = pw;
+      if (!pwVisible) {
+        pwVisible = true;
+        pwInput.type = 'text';
+        pwEye.style.display = 'none';
+        pwEyeOff.style.display = 'block';
+      }
+      updateStrength(pw);
+    });
+
+    pwInput.addEventListener('input', function() {
+      if (this.value) updateStrength(this.value);
+      else pwStrength.style.display = 'none';
     });
   </script>
 </body>

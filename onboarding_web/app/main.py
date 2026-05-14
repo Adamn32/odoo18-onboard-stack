@@ -194,9 +194,7 @@ async def handle_submit(
             status_code=400,
         )
 
-    # Convert free-text Y/N -> boolean
-    dtxt = (domain_name or "").strip().lower()
-    domain_bool = dtxt in {"y", "yes", "true", "1"}
+    domain_bool = (domain_name or "").strip().lower() in {"yes", "y", "true", "1"}
 
     # Persist to DB
     db = SessionLocal()

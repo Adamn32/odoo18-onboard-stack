@@ -34,8 +34,11 @@
       </div>
 
       <div>
-        <label for="domain_name">Do you have a Domain Name? (Y/N)</label>
-        <input type="text" id="domain_name" name="domain_name" placeholder="Y or N" class="field" pattern="[YyNn]" maxlength="1" value="N" required />
+        <label for="domain_name">Do you have a Domain Name?</label>
+        <select id="domain_name" name="domain_name" class="field" required>
+          <option value="No">No</option>
+          <option value="Yes">Yes</option>
+        </select>
       </div>
 
       <div id="nameDomainGroup" class="hidden">
@@ -68,21 +71,15 @@
     const nameGroup = document.getElementById('nameDomainGroup');
 
     function toggleNameDomain() {
-      const val = (domainYN.value || '').trim().toLowerCase();
-      const isYes = val === 'y';
-
-      if (isYes) {
-        nameGroup.classList.remove('hidden');
-        nameGroup.style.animation = 'fadeSlideUp 0.3s cubic-bezier(0.23, 1, 0.32, 1) both';
-      } else {
-        nameGroup.classList.add('hidden');
+      const isYes = domainYN.value === 'Yes';
+      nameGroup.classList.toggle('hidden', !isYes);
+      if (!isYes) {
         const nm = document.getElementById('name_domain_name');
         if (nm) nm.value = '';
       }
     }
 
     toggleNameDomain();
-    domainYN.addEventListener('input', toggleNameDomain);
     domainYN.addEventListener('change', toggleNameDomain);
 
     const form = document.getElementById('intakeForm');
